@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="GeminiCli.Core/GeminiCli.Core.csproj" />
+  <Project Path="GeminiCli/GeminiCli.Program.csproj" />
+</Solution>
