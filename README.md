@@ -12,6 +12,6 @@ Create an API key in **Google AI Studio**:
 https://aistudio.google.com/api-keys
 
 ### 2. Configure Environment Variables
-Open the `.env` file located at ``GeminiCli/.env``
+Open the `.env` file located at ``GeminiCli/.env`` and replace the placeholder ``API_KEY`` with your key
 
 ### 3. Build and Run
