@@ -1,6 +1,6 @@
 # GeminiCli (In Development)
 
-A lightweight C# command-line tool for interacting with **Google Gemini models** directly from the terminal.
+A C# command-line tool for interacting with **Google Gemini models** directly from the terminal.
 
 ## Setup
 
