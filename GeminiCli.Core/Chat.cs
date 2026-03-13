@@ -34,4 +34,9 @@ public class Chat
         GenerateContentResponse response = await this.RequestResponseAsync($"Write a short topic about this chat within {rangeInt.Value} words.", model);
         Topic = response.Text;
     }
+
+    public override string ToString()
+    {
+        return Topic;
+    }
 }
