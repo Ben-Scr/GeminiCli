@@ -24,13 +24,27 @@ namespace BenScr.GeminiCli.Core
     "gemini-3.1-pro-preview",
 };
 
-        public static int selectedModelIndex = 0;
-        private static string selectedModel => Gemini.Models[selectedModelIndex];
+        public static int SelectedModelIndex { get; private set; } = 0;
+        public static string SelectedModel => Gemini.Models[SelectedModelIndex];
 
         public static void Init(string apiKey)
         {
             ApiKey = apiKey;
             Client = new Client(apiKey: ApiKey);
+        }
+
+        public static bool SetModelIndex(int index)
+        {
+            SelectedModelIndex = Math.Clamp(index, 0, Models.Count);
+            return index == SelectedModelIndex;
+        }
+        public static void NextModel()
+        {
+            SelectedModelIndex = (SelectedModelIndex + 1) % Models.Count;
+        }
+        public static void LastModel()
+        {
+            SelectedModelIndex = (SelectedModelIndex + SelectedModelIndex - 1) % Models.Count;
         }
 
         public static async Task<bool> AddModel(string model)
@@ -55,56 +69,18 @@ namespace BenScr.GeminiCli.Core
             }
         }
 
-        public static async Task<GenerateContentResponse> RequestAsync(List<Content> contents)
+        public static async Task<GenerateContentResponse> RequestAsync(List<Content> contents, string model = null)
         {
             if (contents == null || contents.Count == 0)
                 throw new ArgumentNullException("Contents can't be null or empty");
 
+            model ??= SelectedModel;
 
-            Console.WriteLine("Selected Model: " + selectedModel);
+            if (!await ModelExistsAsync(Client, model))
+                throw new ArgumentException($"Model doesn't exist ({model})");
 
-            GenerateContentResponse response = await Client.Models.GenerateContentAsync(model: selectedModel, contents: contents);
+            GenerateContentResponse response = await Client.Models.GenerateContentAsync(model: model, contents: contents);
             return response;
-        }
-
-        public static async Task<GenerateContentResponse> RequestAsync(List<Content> contents, string model)
-        {
-            if (contents == null || contents.Count == 0)
-                throw new ArgumentNullException("Contents can't be null or empty");
-            if (string.IsNullOrEmpty(model))
-                throw new ArgumentNullException("Model can't be null or empty");
-
-            Client client = new Client(apiKey: ApiKey);
-
-            if (!await ModelExistsAsync(client, model))
-            {
-                return null;
-            }
-
-            GenerateContentResponse response = await client.Models.GenerateContentAsync(model: selectedModel, contents: contents);
-            return response;
-        }
-
-        public static async Task<string> GetAnswer(string question)
-        {
-            List<Content> contents = new List<Content>
-            {
-                new Content
-                {
-                Role = "user",
-                Parts = new List<Part>
-                {
-                  new Part { Text = question }
-                }
-                }
-            };
-            GenerateContentResponse response = await RequestAsync(contents);
-            return response?.Text ?? "Error occured";
-        }
-        public static async Task<string> GetAnswer(List<Content> contents)
-        {
-            GenerateContentResponse response = await RequestAsync(contents);
-            return response.Text;
         }
     }
 }

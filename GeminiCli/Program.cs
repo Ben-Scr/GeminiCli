@@ -1,5 +1,4 @@
 ﻿using BenScr.GeminiCli.Core;
-using Google.GenAI;
 using Google.GenAI.Types;
 
 public static class Program
@@ -11,10 +10,21 @@ public static class Program
         EnvLoader envLoader = new EnvLoader("GEMINI_API_KEY");
         Gemini.Init(envLoader.Variable);
 
+        Chat chat = new Chat(user);
+
+        Gemini.SetModelIndex(7);
+
         while (true)
         {
-            Console.Write($"{user.Name}> ");
-            Console.WriteLine(await Gemini.GetAnswer(Console.ReadLine()));
+            string input = Console.ReadLine();
+            if (input.ToLower().Contains("end"))
+                break;
+
+            GenerateContentResponse response = await chat.RequestResponseAsync(input);
+            Console.WriteLine(response.Text);
         }
+
+        await chat.GenerateTopic();
+        Console.WriteLine(chat.Topic);
     }
 }

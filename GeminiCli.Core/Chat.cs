@@ -1,22 +1,21 @@
-﻿using Google.GenAI;
-using Google.GenAI.Types;
-using System.Reflection.Metadata;
+﻿using Google.GenAI.Types;
 
 namespace BenScr.GeminiCli.Core;
 
 public class Chat
 {
-    public string Topic { get; set; }
-    public User User { get; set; }
+    public string Topic { get; private set; }
+    public User User { get; private set; }
 
     public List<Content> History { get; private set; } = new List<Content>();
 
-    public Chat(User user)
+    public Chat(User user, string topic = "")
     {
         User = user;
+        Topic = topic;
     }
 
-    public void AddContent(string input, bool isUser = false)
+    public void AddContent(string input, bool isUser)
     {
         History.Add(new Content
         {
@@ -26,5 +25,13 @@ public class Chat
                   new Part { Text = input }
                 }
         });
+    }
+
+    public async Task GenerateTopic(RangeInt? rangeInt = null, string model = null)
+    {
+        rangeInt ??= new RangeInt(2, 5);
+
+        GenerateContentResponse response = await this.RequestResponseAsync($"Write a short topic about this chat within {rangeInt.Value} words.", model);
+        Topic = response.Text;
     }
 }
