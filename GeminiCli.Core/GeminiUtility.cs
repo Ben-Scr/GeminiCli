@@ -8,9 +8,17 @@ namespace BenScr.GeminiCli.Core
         public static async Task<GenerateContentResponse> RequestResponseAsync(this Chat chat, string input, string model = null)
         {
             chat.AddContent(input, true);
-            GenerateContentResponse response = await Gemini.RequestAsync(chat.History, model);
-            chat.AddContent(response.Text, false);
-            return response;
+            try
+            {
+                GenerateContentResponse response = await Gemini.RequestAsync(chat.History, model);
+                chat.AddContent(response.Text, false);
+                return response;
+            }
+            catch(Exception ex)
+            {
+                chat.RemoveLastContent();
+                throw ex;
+            }
         }
 
         public static List<Content> ToContentList(this string input, string role = "user")

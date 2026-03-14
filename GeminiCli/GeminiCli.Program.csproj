@@ -2,17 +2,15 @@
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFramework>net9.0</TargetFramework>
+		<TargetFramework>net10.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
-	<ItemGroup>	  <PackageReference Include="DotNetEnv" Version="3.1.1" />
-	  <PackageReference Include="Google.GenAI" Version="1.3.0" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\GeminiCli.Core\GeminiCli.Core.csproj" />
+	<ItemGroup>	  <PackageReference Include="BenScr.AI.GeminiClient" Version="1.0.3" />	  <PackageReference Include="DotNetEnv" Version="3.1.1" />
+	  <PackageReference Include="Google.GenAI" Version="1.4.0" />
+	  <PackageReference Include="SerializerCS" Version="1.1.0" />
+	  <PackageReference Include="UtilityCS" Version="1.1.1" />
 	</ItemGroup>
 
 	<ItemGroup>
