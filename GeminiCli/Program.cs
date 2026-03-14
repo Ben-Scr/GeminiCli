@@ -1,5 +1,6 @@
 ﻿using BenScr.AI.Gemini;
 using Google.GenAI.Types;
+using System.Text;
 
 namespace BenScr.GeminiCli.Program;
 
@@ -14,11 +15,51 @@ public static class Program
 
     private static int attempts;
     private static List<Chat> chats = new();
+    private static Chat currentChat;
 
-    public static async Task Main(string[] args) => await Run();
+   // public static async Task Main(string[] args) => await Run();
+
+    static async Task Main()
+    {
+        Console.OutputEncoding = Encoding.UTF8;
+        using var cts = new CancellationTokenSource();
+
+        var spinnerTask = ShowSpinner(cts.Token);
+
+        await Task.Delay(3000); // Simulierte Arbeit
+
+        cts.Cancel();
+        await spinnerTask;
+
+        Console.WriteLine("\rFertig!   ");
+    }
+
+    static async Task ShowSpinner(CancellationToken token)
+    {
+        char[] spinner = { '⠁', '⠂', '⠄', '⠂' };
+        int counter = 0;
+
+        while (!token.IsCancellationRequested)
+        {
+            Console.Write($"\rLädt... {spinner[counter % spinner.Length]}");
+            counter++;
+            await Task.Delay(100, token).ContinueWith(_ => { });
+        }
+    }
 
     private static async Task Run()
     {
+        Console.InputEncoding = Encoding.UTF8;
+        char[] spinner = { '⠁', '⠂', '⠄', '⠂' };
+
+        for (int i = 0; i < 20; i++)
+        {
+            Console.Write($"\rLädt... {spinner[i % spinner.Length]}");
+            Thread.Sleep(100);
+        }
+
+        Console.WriteLine("\rFertig!    ");
+
         OnLoad();
         GeminiApiKey geminiApiKey = GeminiApiKey.LoadFromEnvironment();
         geminiClient = new GeminiClient(geminiApiKey.Key, GeminiUtility.Models[selectedModelIndex]);
@@ -154,7 +195,8 @@ public static class Program
                 break;
 
             var response = await TryRequestAsync(() =>  chat.RequestResponseAsync(input));
-            if (response is not null)
+
+            if (response != null)
                 Console.WriteLine(response.Text);
         }
 
@@ -163,6 +205,7 @@ public static class Program
         if (EnteredYes(username))
         {
             bool topicGenerated = await TryRunAsync(chat.GenerateTopic);
+
             if (topicGenerated)
                 Console.WriteLine(chat.Topic);
         }
@@ -189,6 +232,8 @@ public static class Program
             }
             catch (Exception ex)
             {
+                currentChat.RemoveLastContent();
+
                 if (!tryoutEveryModel)
                 {
                     Console.WriteLine(ex);
@@ -223,6 +268,8 @@ public static class Program
             }
             catch (Exception ex)
             {
+                currentChat.RemoveLastContent();
+
                 if (!tryoutEveryModel)
                 {
                     Console.WriteLine(ex);
