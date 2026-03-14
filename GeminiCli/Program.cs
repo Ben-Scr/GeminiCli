@@ -17,13 +17,28 @@ public static class Program
     private static List<Chat> chats = new();
     private static Chat currentChat;
 
-    static async Task Main(string[] args) => await Run();
-
-    private static async Task Run()
+    static async Task Main(string[] args)
     {
         OnLoad();
-        GeminiApiKey geminiApiKey = GeminiApiKey.LoadFromEnvironment();
-        geminiClient = new GeminiClient(geminiApiKey.Key, GeminiUtility.Models[selectedModelIndex]);
+
+        string apiKey = null;
+        string model = null;
+
+        if (args.Length > 0)
+            apiKey = args[0];
+        if (args.Length > 1)
+            model = args[1];
+
+        if (apiKey == null)
+        {
+            GeminiApiKey geminiApiKey = GeminiApiKey.LoadFromEnvironment();
+            apiKey = geminiApiKey.Key;
+        }
+
+        model ??= GeminiUtility.Models[selectedModelIndex];
+
+
+        geminiClient = new GeminiClient(apiKey, model);
         await ShowOptions();
     }
 
@@ -127,7 +142,7 @@ public static class Program
         currentChat = chat;
 
         Console.Clear();
-        Console.WriteLine("Enter your message - Enter \"End\" in order to go back to the options");
+        Console.WriteLine("Enter \\back to go back to the Options");
 
         if (chat.History.Count > 0)
         {
@@ -136,7 +151,7 @@ public static class Program
             if (EnteredYes(username))
             {
                 Console.Clear();
-                Console.WriteLine("Enter your message - Enter \"End\" in order to go back to the options");
+                Console.WriteLine("Enter \\back to go back to the Options");
 
                 foreach (var history in chat.History)
                 {
@@ -155,7 +170,7 @@ public static class Program
         {
             string input = ReadUserColored(username);
 
-            if (input.Contains("end", StringComparison.OrdinalIgnoreCase))
+            if (input.Contains("\\back", StringComparison.OrdinalIgnoreCase))
                 break;
 
             var response = await TryRequestAsync(() => chat.RequestResponseAsync(input));
