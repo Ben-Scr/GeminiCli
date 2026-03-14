@@ -25,5 +25,34 @@ public static class Utility
 
         return input == "y";
     }
+
+    public static void ClearCurrentConsoleLine()
+    {
+        int currentLineCursor = Console.CursorTop;
+        Console.SetCursorPosition(0, currentLineCursor);
+        Console.Write(new string(' ', Console.BufferWidth - 1));
+        Console.SetCursorPosition(0, currentLineCursor);
+    }
+
+    public static async Task ShowSpinner(string prefix, CancellationToken token)
+    {
+        string[] frames = { "|", "/", "-", "\\" };
+        int i = 0;
+
+        while (!token.IsCancellationRequested)
+        {
+            string text = $"\r{prefix} {frames[i++ % frames.Length]}";
+            Console.Write(text);
+
+            try
+            {
+                await Task.Delay(100, token);
+            }
+            catch (TaskCanceledException)
+            {
+                break;
+            }
+        }
+    }
 }
 

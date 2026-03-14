@@ -17,49 +17,10 @@ public static class Program
     private static List<Chat> chats = new();
     private static Chat currentChat;
 
-   // public static async Task Main(string[] args) => await Run();
-
-    static async Task Main()
-    {
-        Console.OutputEncoding = Encoding.UTF8;
-        using var cts = new CancellationTokenSource();
-
-        var spinnerTask = ShowSpinner(cts.Token);
-
-        await Task.Delay(3000); // Simulierte Arbeit
-
-        cts.Cancel();
-        await spinnerTask;
-
-        Console.WriteLine("\rFertig!   ");
-    }
-
-    static async Task ShowSpinner(CancellationToken token)
-    {
-        char[] spinner = { '⠁', '⠂', '⠄', '⠂' };
-        int counter = 0;
-
-        while (!token.IsCancellationRequested)
-        {
-            Console.Write($"\rLädt... {spinner[counter % spinner.Length]}");
-            counter++;
-            await Task.Delay(100, token).ContinueWith(_ => { });
-        }
-    }
+    static async Task Main(string[] args) => await Run();
 
     private static async Task Run()
     {
-        Console.InputEncoding = Encoding.UTF8;
-        char[] spinner = { '⠁', '⠂', '⠄', '⠂' };
-
-        for (int i = 0; i < 20; i++)
-        {
-            Console.Write($"\rLädt... {spinner[i % spinner.Length]}");
-            Thread.Sleep(100);
-        }
-
-        Console.WriteLine("\rFertig!    ");
-
         OnLoad();
         GeminiApiKey geminiApiKey = GeminiApiKey.LoadFromEnvironment();
         geminiClient = new GeminiClient(geminiApiKey.Key, GeminiUtility.Models[selectedModelIndex]);
@@ -103,7 +64,8 @@ public static class Program
             switch (index)
             {
                 case 1:
-                    await EnterChat(new Chat(geminiClient));
+                    chats.Add(new Chat(geminiClient));
+                    await EnterChat(chats[chats.Count - 1]);
                     return;
                 case 2 when chatsAvailable:
                     await OpenChats();
@@ -162,6 +124,8 @@ public static class Program
 
     private static async Task EnterChat(Chat chat)
     {
+        currentChat = chat;
+
         Console.Clear();
         Console.WriteLine("Enter your message - Enter \"End\" in order to go back to the options");
 
@@ -194,10 +158,7 @@ public static class Program
             if (input.Contains("end", StringComparison.OrdinalIgnoreCase))
                 break;
 
-            var response = await TryRequestAsync(() =>  chat.RequestResponseAsync(input));
-
-            if (response != null)
-                Console.WriteLine(response.Text);
+            var response = await TryRequestAsync(() => chat.RequestResponseAsync(input));
         }
 
         Console.WriteLine("Would you like to generate a topic for this chat? (y/n)");
@@ -224,31 +185,48 @@ public static class Program
 
         while (true)
         {
-            Console.Write($"{geminiClient.Model}> ");
+            string prefix = $"{geminiClient.Model}>";
+
+            using var cts = new CancellationTokenSource();
+            var spinnerTask = ShowSpinner(prefix, cts.Token);
 
             try
             {
-                return await action();
+                var res = await action();
+
+                cts.Cancel();
+                await spinnerTask;
+
+                ClearCurrentConsoleLine();
+                Console.WriteLine($"{prefix} {res.Text}");
+
+                return res;
             }
             catch (Exception ex)
             {
+                cts.Cancel();
+                await spinnerTask;
+
+                ClearCurrentConsoleLine();
+
                 currentChat.RemoveLastContent();
 
                 if (!tryoutEveryModel)
                 {
-                    Console.WriteLine(ex);
+                    Console.WriteLine($"{prefix} ERROR: {ex.Message}");
                     return null;
                 }
 
-                Console.WriteLine("Error occured");
-                selectedModelIndex += selectedModelIndex + 1 % modelLength;
+                Console.WriteLine($"{prefix} Error occurred");
+
+                selectedModelIndex = (selectedModelIndex + 1) % modelLength;
                 await geminiClient.SetModelAsync(GeminiUtility.Models[selectedModelIndex]);
 
                 attempts++;
 
                 if (attempts >= modelLength - 1)
                 {
-                    Console.WriteLine("No working model found");
+                    Console.WriteLine($"{prefix} No working model found");
                     return null;
                 }
             }
